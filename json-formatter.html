@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Formatter</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'SF Mono', 'Fira Code', monospace; background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2a4a; }
+  h1 { font-size: 16px; font-weight: 600; color: #7c83ff; }
+  .actions { display: flex; gap: 8px; }
+  .actions button { background: #2a2a4a; color: #ccc; border: 1px solid #3a3a5a; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+  .actions button:hover { background: #3a3a5a; color: #fff; }
+  .actions button.primary { background: #7c83ff; color: #fff; border-color: #7c83ff; }
+  .actions button.primary:hover { background: #6a70e0; }
+  .container { display: flex; flex: 1; overflow: hidden; }
+  .panel { flex: 1; display: flex; flex-direction: column; }
+  .panel:first-child { border-right: 1px solid #2a2a4a; }
+  .panel-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #666; padding: 8px 16px; background: #16162a; }
+  textarea { flex: 1; background: #12122a; color: #e0e0e0; border: none; padding: 16px; font-family: inherit; font-size: 13px; line-height: 1.6; resize: none; outline: none; tab-size: 2; }
+  textarea::placeholder { color: #444; }
+  pre { flex: 1; background: #12122a; padding: 16px; font-size: 13px; line-height: 1.6; overflow: auto; white-space: pre-wrap; word-wrap: break-word; }
+  .error { color: #ff6b6b; }
+  .str { color: #a8db8f; } .num { color: #f0a86e; } .bool { color: #7cacf8; } .null { color: #888; } .key { color: #c792ea; } .brace { color: #89ddff; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #7c83ff; padding: 8px 20px; border-radius: 6px; font-size: 13px; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>{ } JSON Formatter</h1>
+  <div class="actions">
+    <button onclick="doFormat(2)">2 spaces</button>
+    <button onclick="doFormat(4)" class="primary">4 spaces</button>
+    <button onclick="doMinify()">Minify</button>
+    <button onclick="doCopy()">Copy</button>
+    <button onclick="doClear()">Clear</button>
+  </div>
+</header>
+<div class="container">
+  <div class="panel">
+    <div class="panel-label">Input</div>
+    <textarea id="input" placeholder="Paste JSON here..." spellcheck="false"></textarea>
+  </div>
+  <div class="panel">
+    <div class="panel-label">Output</div>
+    <pre id="output"></pre>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+  const input = document.getElementById('input');
+  const output = document.getElementById('output');
+  let lastIndent = 4;
+
+  input.addEventListener('input', () => doFormat(lastIndent));
+
+  function doFormat(indent) {
+    lastIndent = indent;
+    const raw = input.value.trim();
+    if (!raw) { output.innerHTML = ''; return; }
+    try {
+      const obj = JSON.parse(raw);
+      const formatted = JSON.stringify(obj, null, indent);
+      output.innerHTML = highlight(formatted);
+    } catch (e) {
+      output.innerHTML = `<span class="error">✗ ${e.message}</span>`;
+    }
+  }
+
+  function doMinify() {
+    const raw = input.value.trim();
+    if (!raw) return;
+    try {
+      const obj = JSON.parse(raw);
+      const minified = JSON.stringify(obj);
+      output.innerHTML = highlight(minified);
+    } catch (e) {
+      output.innerHTML = `<span class="error">✗ ${e.message}</span>`;
+    }
+  }
+
+  function doCopy() {
+    const text = output.textContent;
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+  }
+
+  function doClear() {
+    input.value = '';
+    output.innerHTML = '';
+  }
+
+  function highlight(json) {
+    return json.replace(/("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?|[{}\[\],])/g, match => {
+      let cls = 'num';
+      if (/^"/.test(match)) cls = /:$/.test(match) ? 'key' : 'str';
+      else if (/true|false/.test(match)) cls = 'bool';
+      else if (/null/.test(match)) cls = 'null';
+      else if (/[{}\[\],]/.test(match)) cls = 'brace';
+      return `<span class="${cls}">${match}</span>`;
+    });
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1200);
+  }
+</script>
+</body>
+</html>
