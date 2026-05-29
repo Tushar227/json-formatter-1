@@ -14,6 +14,8 @@
   .actions button:hover { background: #3a3a5a; color: #fff; }
   .actions button.primary { background: #7c83ff; color: #fff; border-color: #7c83ff; }
   .actions button.primary:hover { background: #6a70e0; }
+  .actions button.validate { background: #2a4a3a; color: #a8db8f; border-color: #3a5a4a; }
+  .actions button.validate:hover { background: #3a5a4a; }
   .container { display: flex; flex: 1; overflow: hidden; }
   .panel { flex: 1; display: flex; flex-direction: column; }
   .panel:first-child { border-right: 1px solid #2a2a4a; }
@@ -31,8 +33,10 @@
 <header>
   <h1>{ } JSON Formatter</h1>
   <div class="actions">
-    <button onclick="doFormat(2)">2 spaces</button>
-    <button onclick="doFormat(4)" class="primary">4 spaces</button>
+    <button onclick="doValidate()" class="validate">✓ Validate</button>
+    <button onclick="doFormat(lastIndent)" class="primary">Format</button>
+    <button onclick="doFormat(2)">2 sp</button>
+    <button onclick="doFormat(4)">4 sp</button>
     <button onclick="doMinify()">Minify</button>
     <button onclick="doCopy()">Copy</button>
     <button onclick="doClear()">Clear</button>
@@ -66,6 +70,19 @@
       output.innerHTML = highlight(formatted);
     } catch (e) {
       output.innerHTML = `<span class="error">✗ ${e.message}</span>`;
+    }
+  }
+
+  function doValidate() {
+    const raw = input.value.trim();
+    if (!raw) { output.innerHTML = '<span class="error">No input to validate.</span>'; return; }
+    try {
+      JSON.parse(raw);
+      output.innerHTML = '<span class="bool" style="font-size:15px;">✓ Valid JSON</span>';
+      showToast('Valid JSON ✓');
+    } catch (e) {
+      output.innerHTML = `<span class="error" style="font-size:15px;">✗ Invalid JSON\n\n${e.message}</span>`;
+      showToast('Invalid JSON ✗');
     }
   }
 
